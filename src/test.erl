@@ -8,6 +8,8 @@
 -define(CHROMEDRIVER, "http://localhost:9515/").
 -define(SESSION, test).
 -define(URL, "http://udc.quickcheck-ci.com/").
+   
+
 
 test() ->
     {ok, _Pid} = webdrv_session:start_session(?SESSION, ?CHROMEDRIVER,
@@ -20,22 +22,55 @@ test() ->
     As = get_actions(),
     State = loop(lists:map(fun(A) -> {[?URL], A} end, As), [{[?URL], P, As}]),
     io:format("~n"),
-    print(State),
+    print(State, []),
 
     webdrv_session:stop_session(test).
 
-print([]) ->
-    ok;
-print([{_, P, As}|S]) ->
-    {ok, E} = find_element_xpath(P),
-    {ok, Id} = webdrv_session:element_attribute(?SESSION, E, "id"),
-    Ts = lists:map(fun(A) ->
-                       {ok, E1} = find_element_xpath(A),
-                       {ok, Text} = webdrv_session:get_text(?SESSION, E1),
-                       Text
-                   end, As),
-    io:format("~p -> ~p~n", [Id, Ts]),
-    print(S).
+print_actions() ->
+     {ok, _Pid} = webdrv_session:start_session(?SESSION, ?CHROMEDRIVER,
+                                              webdrv_cap:default_chrome(),
+                                              10000),
+    io:format("URL ~s~n", [?URL]),
+    ok = webdrv_session:set_url(?SESSION, ?URL),
+    As = get_actions(),
+    [get_text_action(A) || A <- As].
+
+   
+remove_invalid_actions(L) ->
+    lists:foldr(fun({State,Actions}, Acc) ->
+                        NewActions = lists:filter(fun({ActionId,_ActionName}) ->
+                                                          ActionId /= [] end, Actions),
+                        case NewActions of
+                            [] ->
+                                Acc;
+                            _ ->
+                                [{State, NewActions}|Acc]
+                        end
+                end, [], L).
+
+                                                
+
+
+
+print([], L) ->
+    io:format("~p~n", [L]);
+print([{Path, P, As}|S], L) ->
+    case goto(Path) of
+        ok ->
+            {ok, E} = find_element_xpath(P),
+            {ok, Id} = webdrv_session:element_attribute(?SESSION, E, "id"),
+            Ts = lists:map(fun(A) ->
+                                   {ok, E1} = find_element_xpath(A),
+                                   {ok, Text} = webdrv_session:get_text(?SESSION, E1),
+                                   Text
+                           end, As),
+            NewL = [{ {Id,P}, lists:zip(Ts,As) } | L],
+            FilteredL = remove_invalid_actions(NewL),
+            %io:format("~p -> ~p~n", [Id, Ts]),
+            print(S, FilteredL);
+        _ ->
+            print(S, L)
+    end.
 
 loop([], State) ->
     State;
@@ -97,6 +132,27 @@ run_actions([A|As]) ->
         {error, _} ->
             {error, cannot_run_actions}
     end.
+
+get_text_action(A) ->
+  case string:str(A, "(//a)") > 0 orelse
+         string:str(A, "(//button)") > 0 of
+        true ->
+            case is_displayed(A) of
+                true ->
+                    case find_element_xpath(A) of
+                        {ok, E} ->
+                            {ok, Text} = webdrv_session:get_text(?SESSION, E),
+                            Text;
+                        _ ->
+                            {error, element_not_found}
+                    end;
+                false ->
+                    {error, element_not_displayed}
+            end;
+        false ->
+            {error, not_an_action}
+    end.
+    
 
 run_action(A) ->
     case string:str(A, "(//a)") > 0 orelse
