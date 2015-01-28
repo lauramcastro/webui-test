@@ -1,7 +1,7 @@
-all: ebin/test.beam
+all: compile
 
-ebin/%.beam: src/%.erl
-	erlc -o ebin/ $<
+compile: src/*.erl
+	erlc -o ebin/ src/*.erl
 
 run: ebin/test.beam
 	./chromedriver &
