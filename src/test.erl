@@ -24,10 +24,10 @@ test() ->
     io:format("~n"),
     io:format("~p~n", [State]),
 
-    print(State,[]),
+    L = print(State,[]),
 
-    webdrv_session:stop_session(test).
-   %L.
+    webdrv_session:stop_session(test),
+    io:format("L = ~p~n", [L]).
 
 
 
@@ -57,7 +57,7 @@ explore_actions(A, {{PName,PId}, Actions}) ->
     case Actions of
         [] ->
             [];
-        [{AName,_AId}|T] ->
+        [{AName,_AId, _NPage}|T] ->
             case AName == A of
                 true ->
                     PId;
@@ -69,28 +69,35 @@ explore_actions(A, {{PName,PId}, Actions}) ->
     
 
 
-get_action_id(ActionName, PA) ->
+get_action_id_and_page(ActionName, PA) ->
     case PA of
         [] ->
             [];
         [{_Page, Actions}|T] ->
-            case get_id(ActionName, Actions) of
+            ExploredActions = lists:map(fun({AName, AId, NPage}) ->
+                                                case AName == ActionName of
+                                                    true ->
+                                                        {AId, NPage};
+                                                    _ ->
+                                                        []
+                                                end end, Actions),
+            case lists:flatten(ExploredActions) of
                 [] ->
-                    get_action_id(ActionName, T);
-                Else ->
-                    Else
-                        end
+                    get_action_id_and_page(ActionName,T);
+                Any ->
+                    Any
+            end
     end.
-
-get_id(_ActionName, []) ->
-    [];
-get_id(ActionName, [{AName,AId}|T]) ->
-    case ActionName == AName of
-        true ->
-            AId;
-        _ ->
-            get_id(ActionName, T)
-    end.
+    
+%% get_id(_ActionName, []) ->
+%%     [];
+%% get_id(ActionName, [{AName,AId,Page}|T]) ->
+%%     case ActionName == AName of
+%%         true ->
+%%             AId;
+%%         _ ->
+%%             get_id(ActionName, T)
+%%     end.
              
     
 
