@@ -27,8 +27,12 @@ test() ->
     L = print(State,[]),
 
     webdrv_session:stop_session(test),
-    io:format("L = ~p~n", [L]).
+%    io:format("Before printing~n", []),
+%    io:format("L = ~p~n", [L]),
+    L.
 
+stop() ->
+    webdrv_session:stop_session(test).
 
 
 %%%%%
@@ -51,25 +55,25 @@ get_page_from_action(Action, PA) ->
     end.
 
 
-explore_actions(_A, {{_PName,_PId}, []}) ->
+explore_actions(_A, {_PName, []}) ->
     [];
-explore_actions(A, {{PName,PId}, Actions}) ->
+explore_actions(A, {PName, Actions}) ->
     case Actions of
         [] ->
             [];
         [{AName,_AId, _NPage}|T] ->
             case AName == A of
                 true ->
-                    PId;
+                    PName;
                 _ ->
-                    explore_actions(A, {{PName,PId}, T})
+                    explore_actions(A, {PName, T})
             end
     end.
                      
     
 
 
-get_action_id_and_page(ActionName, PA) ->
+get_action_id_and_next_page(ActionName, PA) ->
     case PA of
         [] ->
             [];
@@ -83,51 +87,58 @@ get_action_id_and_page(ActionName, PA) ->
                                                 end end, Actions),
             case lists:flatten(ExploredActions) of
                 [] ->
-                    get_action_id_and_page(ActionName,T);
+                    get_action_id_and_next_page(ActionName,T);
+                [Some] ->
+                    Some;
                 Any ->
-                    Any
+                    {error, repeated_pages, Any}
             end
     end.
-    
-%% get_id(_ActionName, []) ->
-%%     [];
-%% get_id(ActionName, [{AName,AId,Page}|T]) ->
-%%     case ActionName == AName of
-%%         true ->
-%%             AId;
-%%         _ ->
-%%             get_id(ActionName, T)
-%%     end.
-             
+
+get_all_actions(PA) ->
+    case PA of
+        [] ->
+            [];
+        [{_Page,Actions}|T] ->
+            
+              lists:map(fun({AName,_AId,_Npage}) ->
+                                 AName end,Actions)  ++ get_all_actions(T)
+    end.
+
     
 
 %%%%%%%%%%%%%%%%%%%%%%
 
 rename_all_actions([]) ->
     [];
-rename_all_actions([{{PName, PId}, Actions}|T]) ->
-    [{{PName, PId}, rename_actions_from_page(PName,Actions)} | rename_all_actions(T)].
+rename_all_actions([{PName, Actions}|T]) ->
+    [{PName, rename_actions_from_page(PName,Actions)} | rename_all_actions(T)].
 
 
 rename_actions_from_page(PName, Actions) ->
     lists:map(fun({AName,AId, PNext}) ->
-                      {create_action_name(PName, AName), AId, PNext} end, Actions).
+                    %  io:format("AId=~p~n", [AId]),
+                      {create_action_name(PName, AName, AId), AId, PNext} end, Actions).
     
-create_action_name(PName, AName) ->
-    PName ++ "_" ++ string:to_lower(re:replace(AName, " ", "_", [global, {return, list}])).
+create_action_name(PName, AName, AId) ->
+    Suffix = case string:str(AId, "(//a)")>0 of
+                  true -> "a";
+                  _ -> "button"
+              end,
+    PName ++ "_" ++ string:to_lower(re:replace(AName, " ", "_", [global, {return, list}])) ++ "_" ++ Suffix.
 
 
 
 
 remove_invalid_actions(L) ->
-    lists:foldr(fun({{PName, PId},Actions}, Acc) ->
+    lists:foldr(fun({PName,Actions}, Acc) ->
                         NewActions = lists:filter(fun({ActionId,_ActionName,_}) ->
                                                           ActionId /= [] end, Actions),
                         case NewActions of
                             [] ->
                                 Acc;
                             _ ->
-                                [{{PName,PId}, NewActions}|Acc]
+                                [{PName, NewActions}|Acc]
                         end
                 end, [], L).
 
@@ -137,11 +148,11 @@ remove_invalid_actions(L) ->
 
 print([], L) ->
     rename_all_actions(L);
-print([{Path, P, As}|S], L) ->
+print([{Path, Id, As}|S], L) ->
     case goto(Path) of
         ok ->
-            {ok, E} = find_element_xpath(P),
-            {ok, PName} = webdrv_session:element_attribute(?SESSION, E, "id"),
+          %  {ok, E} = find_element_xpath(P),
+          %  {ok, PName} = webdrv_session:element_attribute(?SESSION, E, "id"),
             NewAs = lists:filter(fun(A) ->
                                          not is_list(A) end, As),
             Ts = lists:map(fun({A,_P}) ->
@@ -156,7 +167,7 @@ print([{Path, P, As}|S], L) ->
             As2 = lists:map(fun({A, _P}) ->
                                     A
                             end, NewAs),
-            NewL = [{ {PName,P}, lists:zip3(Ts,As2,Ps) } | L],
+            NewL = [{ Id, lists:zip3(Ts,As2,Ps) } | L],
             FilteredL = remove_invalid_actions(NewL),                                             
             print(S, FilteredL);
         _ ->
@@ -175,15 +186,15 @@ loop([{Path, A} | T], State) ->
             case find_active_page() of
                 {error, _} ->
                     loop(T, State);
-                P ->
-                    {ok, E} = find_element_xpath(P),
-                    {ok, Id} = webdrv_session:element_attribute(?SESSION, E, "id"),
-                    NewState = add_action_page(Path, A, P, State),
-                    case lists:keyfind(P, 2, State) of
+                Id ->
+                    %{ok, E} = find_element_xpath(P),
+                    %{ok, Id} = webdrv_session:element_attribute(?SESSION, E, "id"),
+                    NewState = add_action_page(Path, A, Id, State),
+                    case lists:keyfind(Id, 2, State) of
                         false ->
                             io:format("New page ~p~n", [Id]),
                             As = get_actions(),
-                            loop(T ++ lists:map(fun(A1) -> {Path1, A1} end, As), [{Path1, P, As} | NewState]);
+                            loop(T ++ lists:map(fun(A1) -> {Path1, A1} end, As), [{Path1, Id, As} | NewState]);
                         _ ->
                             io:format("Old page ~p~n", [Id]),
                             loop(T, NewState)
@@ -192,6 +203,7 @@ loop([{Path, A} | T], State) ->
         {error, _} ->
             loop(T, State)
     end.
+
 
 add_action_page(Path, A, P, State) ->
     case lists:keyfind(Path, 1, State) of
@@ -211,13 +223,15 @@ add_action_page(Path, A, P, State) ->
 %% Utils
 find_active_page() ->
     Ps = find_elements_xpath("//div"),
-    Ps1 = [P || P <- Ps,
-                {ok, E} <- [find_element_xpath(P)],
-                {ok, Cl} <- [webdrv_session:element_attribute(?SESSION, E,
-                                                              "class")],
-                string:str(Cl, "main")   > 0 andalso
-                string:str(Cl, "page")   > 0 andalso
-                string:str(Cl, "active") > 0
+    Ps1 = [Id || P <- Ps,
+                 {ok, E} <- [find_element_xpath(P)],
+                 {ok, Id} <- [webdrv_session:element_attribute(?SESSION, E, "id")],
+
+                 {ok, Cl} <- [webdrv_session:element_attribute(?SESSION, E,
+                                                               "class")],
+                 string:str(Cl, "main")   > 0 andalso
+                     string:str(Cl, "page")   > 0 andalso
+                     string:str(Cl, "active") > 0
           ],
     case length(Ps1) of
         0 ->
@@ -298,6 +312,11 @@ get_links() ->
 get_buttons() ->
     L = find_elements_xpath("//button"),
     [X || X <- L, is_displayed(X)].
+
+find_element_id(X) ->
+    {ok, E} = find_element_xpath(X),
+    {ok, Id} = webdrv_session:element_attribute(?SESSION, E, "id"),
+    Id.
 
 find_element_xpath(X) ->
     webdrv_session:find_element(?SESSION, "xpath", X).
