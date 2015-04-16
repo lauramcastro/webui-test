@@ -314,9 +314,7 @@ get_buttons() ->
     [X || X <- L, is_displayed(X)].
 
 find_element_id(X) ->
-    {ok, E} = find_element_xpath(X),
-    {ok, Id} = webdrv_session:element_attribute(?SESSION, E, "id"),
-    Id.
+    webdrv_session:find_element(?SESSION, "id", X).
 
 find_element_xpath(X) ->
     webdrv_session:find_element(?SESSION, "xpath", X).
@@ -333,9 +331,13 @@ find_elements_xpath(E, N) ->
     end.
 
 is_displayed(X) ->
-    {ok, E} = find_element_xpath(X),
-    {ok, R} = webdrv_session:is_displayed_element(?SESSION, E),
-    R.
+    case find_element_xpath(X) of
+        {ok, E} ->
+            {ok, R} = webdrv_session:is_displayed_element(?SESSION, E),
+            R;
+        {error, _} ->
+            false
+    end.
 
 filter_url(X) ->
     {ok, E} = find_element_xpath(X),
@@ -344,11 +346,16 @@ filter_url(X) ->
         {ok, null} ->
             false;
         {ok, Url} ->
-            case string:str(Url, "http") of
+            case string:str(Url, "mailto") of
                 0 ->
-                    false;
+                    case string:str(Url, "http") of
+                        0 ->
+                            true;
+                        _ ->
+                            filter_host(Url)
+                    end;
                 _ ->
-                    filter_host(Url)
+                    false
             end;
         _ ->
             false
