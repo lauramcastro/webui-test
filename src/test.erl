@@ -280,13 +280,14 @@ get_text_action(A) ->
 
 run_action(A) ->
     case string:str(A, "(//a)") > 0 orelse
-         string:str(A, "(//button)") > 0 of
+         string:str(A, "(//button)") > 0 orelse
+         string:str(A, "(//input)") > 0 of
         true ->
             case is_displayed(A) of
                 true ->
                     case find_element_xpath(A) of
                         {ok, E} ->
-                            {ok, Text} = webdrv_session:get_text(?SESSION, E),
+                            Text = get_text_xpath(A),
                             io:format("CLICK ~p~n", [Text]),
                             ok = webdrv_session:click_element(?SESSION, E);
                         _ ->
@@ -299,10 +300,31 @@ run_action(A) ->
             {error, not_an_action}
     end.
 
+get_text_xpath(X) ->
+    case find_element_xpath(X) of
+        {ok, E} ->
+            case string:str(X, "(//a)") > 0 orelse
+                 string:str(X, "(//button)") > 0 of
+                true ->
+                    {ok, Text} = webdrv_session:get_text(?SESSION, E);
+                _ ->
+                    case string:str(X, "(//input)") > 0 of
+                        true ->
+                            {ok, Text} = webdrv_session:element_attribute(?SESSION, E, "value");
+                        _ ->
+                            Text = ""
+                    end
+            end;
+        _ ->
+            Text = ""
+    end,
+    Text.
+
 get_actions() ->
     L = get_links(),
     B = get_buttons(),
-    L ++ B.
+    I = get_inputs(),
+    L ++ B ++ I.
 
 get_links() ->
     L = find_elements_xpath("//a"),
@@ -312,6 +334,10 @@ get_links() ->
 get_buttons() ->
     L = find_elements_xpath("//button"),
     [X || X <- L, is_displayed(X)].
+
+get_inputs() ->
+    L = find_elements_xpath("//input"),
+    [X || X <- L, is_displayed(X), is_type_submit(X)].
 
 find_element_id(X) ->
     webdrv_session:find_element(?SESSION, "id", X).
@@ -335,6 +361,15 @@ is_displayed(X) ->
         {ok, E} ->
             {ok, R} = webdrv_session:is_displayed_element(?SESSION, E),
             R;
+        {error, _} ->
+            false
+    end.
+
+is_type_submit(X) ->
+    case find_element_xpath(X) of
+        {ok, E} ->
+            {ok, R} = webdrv_session:element_attribute(?SESSION, E, "type"),
+            R == "submit";
         {error, _} ->
             false
     end.
