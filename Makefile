@@ -16,4 +16,4 @@ $(SUT): compile
 	erl -pa ebin/ -pa $(WEBDRV)/ebin/ -run $(SUT) run -run init stop -noshell
 
 clean:
-	rm -f ebin/* src/*~ test/*~
+	rm -f ebin/* include/*~ src/*~ test/*~
