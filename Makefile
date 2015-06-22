@@ -1,16 +1,19 @@
+SUT=vodkatv_adminui
+BROWSERDRV=deps/chromedriver
+WEBDRV=deps/webdrv
+
 all: compile
 
 compile: src/*.erl
-	erlc -o ebin/ src/*.erl
+	erlc -pa ebin -o ebin/ -I include src/*.erl test/*.erl
 
 run: ebin/test.beam
-	./chromedriver &
-	erl -pa ebin/ -pa webdrv/ebin/
+	./$(BROWSERDRV) &
+	erl -pa ebin/ -pa $(WEBDRV)/ebin/
 
-admingui: compile
-	./chromedriver &
-	erl -pa ebin/ -pa webdrv/ebin/ -run admingui_eqc run -run init stop -noshell
+$(SUT): compile
+	./$(BROWSERDRV) &
+	erl -pa ebin/ -pa $(WEBDRV)/ebin/ -run $(SUT) run -run init stop -noshell
 
-test: ebin/test.beam
-	./chromedriver &
-	erl -pa ebin/ -pa webdrv/ebin/ -run test test -run init stop -noshell
+clean:
+	rm -f ebin/* src/*~ test/*~
