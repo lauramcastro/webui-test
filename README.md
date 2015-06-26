@@ -1,4 +1,4 @@
-# webui-test: QuickCheck-based WebUI testing framework
+# webui-test: QuickCheck-based web-based GUI testing framework
 
 WebUI-test is a QuickCheck-based testing framework intended for
 automatic generation and execution of test sequences for
