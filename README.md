@@ -24,11 +24,11 @@ Apart from a QuickCheck licence, there are two main dependencies:
 
 * `webdriver`, which provides an API to control the behaviour and inspect the
   state of a web browser in a platform-independent and language-neutral manner;
-  in this project we use the Erlang implementation: [[https://github.com/lauramcastro/webdrv]]
+  in this project we use the [https://github.com/lauramcastro/webdrv|Erlang implementation].
 * `chromedriver`, the webdriver implementation for the chromium browser (or
   equivalent if you intend to use a different browser).
   
-  ## How do I use it?
+## How do I use it?
   
-  We will provide some examples of use in upcoming commits. Please bear
-  with us.
+We will provide some examples of use in upcoming commits. Please bear
+with us.
