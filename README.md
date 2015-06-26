@@ -4,7 +4,7 @@ WebUI-test is a QuickCheck-based testing framework intended for
 automatic generation and execution of test sequences for
 web-based graphical user interfaces (GUIs).
 
-## What does 'automatic generation and execution of test sequences' mean?
+## What does that mean?
 
 WebUI-test is focused primarly in enabling a sort of QuickCheck-based
 monkey testing. It is QuickCheck-based because rather than writing
