@@ -1,15 +1,16 @@
-SUT=vodkatv_adminui
+SUT=vodkatv_oldadminui
 BROWSERDRV=deps/chromedriver
 WEBDRV=deps/webdrv
+FLAGS=-Ddebug
 
 all: compile
 
 compile: src/*.erl
 	test -d ebin || mkdir ebin
-	erlc -pa ebin -o ebin -I include src/*.erl test/*.erl
+	erlc -pa ebin -o ebin -I include $(FLAGS) src/*.erl test/*.erl
 
 dialyzer:
-	erlc +debug_info -pa ebin -o ebin -I include src/*.erl test/*.erl
+	erlc +debug_info -pa ebin -o ebin -I include $(FLAGS) src/*.erl test/*.erl
 	dialyzer -Wunmatched_returns \
                  -Werror_handling    \
                  -Wrace_conditions   \
@@ -25,9 +26,9 @@ $(SUT): compile
 
 docs:
 	test -d doc || mkdir doc
-	erl -noshell -run edoc_run files '["src/webui_model.erl"]' '[{dir,"doc/html"}]'
+	erl -noshell -run edoc_run files '["src/webui_actions.erl", "src/webui_model.erl"]' '[{dir,"doc/html"}]'
 
 clean:
 	rm -f  ebin/* include/*~ src/*~ test/*~ doc/*~
+	rm -f  erl_crash.dump
 	rm -rf doc/html
-
