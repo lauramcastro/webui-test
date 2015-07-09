@@ -12,9 +12,13 @@
 
 -define(ID,     "id").
 -define(TYPE,   "type").
+-define(CLASS,  "class").
 -define(SUBMIT, "submit").
 -define(XPATH,  "xpath").
--define(XPATH_INPUT, "//input").
+% these could be local to VoDKATV actions/model
+-define(XPATH_BUTTON, "//button").
+-define(XPATH_INPUT,  "//input").
+-define(XPATH_LINK,   "//a").
 
 -ifdef(debug).
 -define(DEBUG(IOString, Args), io:format(IOString, Args)).

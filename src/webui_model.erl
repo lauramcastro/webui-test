@@ -14,15 +14,17 @@
 % exported for behaviour implementation
 -export([run/2, setup/2, teardown/1]).
 % exported for QC
--export([initial_state/0]).
+-export([do_nothing/0, run_action/1]).
+-export([api_spec/0, initial_state/0, command/1]).
+-export([precondition/2, callouts/2, postcondition/3, next_state/3]).
 
 -include("webui.hrl").
 -include_lib("eqc/include/eqc.hrl").
--include_lib("eqc/include/eqc_component.hrl").
+-include_lib("eqc/include/eqc_mocking.hrl").
 -include_lib("eqc/include/eqc_dynamic_cluster.hrl").
 
 -record(test_state, {current_page,
-		     pages_and_actions}).
+		     actions}).
 
 %% @doc
 %%      Runs model, this is, executes a generic QuickCheck property to trigger
@@ -40,8 +42,8 @@ prop_webui(Mod, Url) ->
 	   end,
 	   ?FORALL(Cmds, dynamic_commands(?MODULE),
 		   ?CHECK_COMMANDS(HSR={_History, _FinalState, Result}, ?MODULE, Cmds,
-				   pretty_commands(?MODULE, Cmds, HSR,
-						   Result == ok)))).
+				   eqc_component:pretty_commands(?MODULE, Cmds, HSR,
+								 Result == ok)))).
 
 %% @doc
 %%      Setup function, to be executed before QuickCheck tests begin; performs
@@ -70,6 +72,55 @@ teardown(Mod) ->
 
 %% @private
 initial_state() ->
-    #test_state{current_page = webui_actions:find_active_page(),
-		pages_and_actions = []}.
+    {ok, URL} = webdrv_session:get_url(?SESSION),
+    {ok, Actions} = webui_actions:get_actions(),
+    #test_state{current_page = URL,
+		actions = Actions}.
 
+%% @private
+command(S) ->
+    case S#test_state.actions of
+	[] ->
+	    {call, ?MODULE, do_nothing, []};
+	ListOfActions ->
+	    {call, ?MODULE, run_action, [oneof(ListOfActions)]}
+    end.
+
+%% @private
+do_nothing() ->
+    ?DEBUG("No actions available~n", []),
+    ok.
+
+%% @private
+run_action({link, E}) ->
+    ?DEBUG("Follow link ~p~n", [E]),
+    webui_actions:activate_element(E);
+run_action({button, E}) ->
+    ?DEBUG("Press button ~p~n", [E]),
+    webui_actions:activate_element(E);
+run_action({input, _E}) ->
+    ?DEBUG("Input text is not yet supported~n", []),
+    ok.
+
+%% @private
+precondition(_S, _C) ->
+    true.
+
+%% @private
+postcondition(_S, _C, ok) ->
+    true;
+postcondition(_S, _C, _R) ->
+    false.
+
+%% @private
+next_state(S, _R, _C) ->
+    {ok, Actions} = webui_actions:get_actions(),
+    S#test_state{actions = Actions}.
+
+%% @private
+api_spec() ->
+    #api_spec{}.
+
+%% @private
+callouts(_,_) ->
+    empty.

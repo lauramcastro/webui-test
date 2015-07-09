@@ -10,11 +10,15 @@
 
 -callback setup() -> ok.
 -callback terminate() -> ok.
+-callback get_links() -> {ok, [term()]}.
+-callback get_buttons() -> {ok, [term()]}.
+-callback get_inputs() -> {ok, [term()]}.
 
 % exported for behaviour implementation
--export([setup/1, terminate/0, find_active_page/0,
+-export([setup/1, terminate/0,
 	 find_element_by_id/1, set_element_value/2, activate_element/1,
-	 find_elements_by_type/1, find_elements_by_type/2]).
+	 find_elements_by_type/1, find_elements_by_type/2,
+	 get_actions/0]).
 % exported to comply with gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2, code_change/3]).
 
@@ -40,44 +44,41 @@ terminate() ->
     gen_server:cast(?ACTIONSERVER, stop).
 
 %% @doc
-%%      Generic action to find the active page.
-%% @end
--spec find_active_page() -> term().
-find_active_page() ->
-    ?DEBUG("===> finding active page ", []),
-    todo.
-
-%% @doc
 %%      Generic action to find a given element by identifier.
 %% @end
--spec find_element_by_id(Id :: string()) -> term().
+-spec find_element_by_id(Id :: string()) -> {ok, term()}.
 find_element_by_id(Id) ->
     ?DEBUG("===> finding element by id ~p ", [Id]),
-    webdrv_session:find_element(?SESSION, ?ID, Id).
+    {ok, Element} = webdrv_session:find_element(?SESSION, ?ID, Id),
+    ?DEBUG("=> ~p~n", [Element]),
+    {ok, Element}.
 
 %% @doc
-%%      Generic action to find elements using XPath types.
+%%      Generic action to find elements by type.
 %% @end
--spec find_elements_by_type(Type :: string()) -> term().
+-spec find_elements_by_type(Type :: string()) -> {ok, term()}.
 find_elements_by_type(Type) ->
     find_elements_by_type(Type, []).
 
 %% @doc
-%%      Generic action to find elements using XPath types.
+%%      Generic action to find elements using by type.
 %%      A list of options to apply when performing the search can be supplied.
 %% @end
 -spec find_elements_by_type(Type :: string(),
-			   Options :: [atom()]) -> term().
+			   Options :: [atom()]) -> {ok, [term()]}.
 find_elements_by_type(Type, Options) ->
-    ?DEBUG("===> finding element by type ~p ", [Type]),
+    ?DEBUG("===> finding elements by type ~p ", [Type]),
     {ok, Elements} = webdrv_session:find_elements(?SESSION, ?XPATH, Type),
-    {ok, filter(Elements, Options)}.
+    ?DEBUG("=> filtering ~p with ~p ", [length(Elements), Options]),
+    Result = filter(Elements, Options),
+    ?DEBUG("=> ~p~n", [length(Result)]),
+    {ok, Result}.
 
 %% @doc
 %%      Generic action to set an element to a given value.
 %% @end
 -spec set_element_value(E :: string(),
-			V :: string()) -> term().
+			V :: string()) -> ok.
 set_element_value(E, V) ->
     ?DEBUG("===> setting ~p to ~p~n", [E, V]),
     ?WEBDRV_SESSION(send_value(?SESSION, E, V)).
@@ -85,10 +86,38 @@ set_element_value(E, V) ->
 %% @doc
 %%      Generic action to interact with an element (i.e., click a button).
 %% @end
--spec activate_element(E :: string) -> term().
+-spec activate_element(E :: string) -> ok.
 activate_element(E) ->
-    ?DEBUG("===> activating ~p~n", [E]),
-    ?WEBDRV_SESSION(click_element(?SESSION, E)).
+    ?DEBUG("===> activating ~p ", [E]),
+    Result = ?WEBDRV_SESSION(click_element(?SESSION, E)),
+    ?DEBUG("=> (~p) and goes to ~p~n", [Result,webdrv_session:get_url(?SESSION)]),
+    Result.
+
+%% @doc
+%%      Generic action to find the interaction possibilities on the current
+%%      active page.
+%% @end
+-spec get_actions() -> {ok, [term()]}.
+get_actions() ->
+    {ok, L} = get_links(),
+    {ok, B} = get_buttons(),
+    {ok, I} = get_inputs(),
+    % TODO: consider browser buttons: reload, back, forward
+    {ok, [{link, Link}     || Link <- L] ++
+	 [{button, Button} || Button <- B] ++
+	 [{input, Input}   || Input <- I]}.
+
+%% @private
+get_links() ->
+    gen_server:call(?ACTIONSERVER, get_links).
+
+%% @private
+get_buttons() ->
+    gen_server:call(?ACTIONSERVER, get_buttons).
+
+%% @private
+get_inputs() ->
+    gen_server:call(?ACTIONSERVER, get_inputs).
 
 %%
 %% gen_server callbacks implementation
@@ -99,9 +128,17 @@ init([Mod]) ->
     {ok, [Mod]}.
 
 %% @private
+handle_call(get_links, _From, [Mod]) ->
+    Reply = Mod:get_links(),
+    {reply, Reply, [Mod]};
+handle_call(get_buttons, _From, [Mod]) ->
+    Reply = Mod:get_buttons(),
+    {reply, Reply, [Mod]};
+handle_call(get_inputs, _From, [Mod]) ->
+    Reply = Mod:get_inputs(),
+    {reply, Reply, [Mod]};
 handle_call(_Request, _From, State) ->
-    Reply = ok,
-    {reply, Reply, State}.
+    {noreply, State}.
 
 %% @private
 handle_cast(stop, State) ->
