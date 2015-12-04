@@ -2,10 +2,10 @@
 %%% @author Laura M. Castro
 %%% @copyright 2015
 %%% @doc
-%%%      Specific actions for VoDKATV AdminUI (old).
+%%%      Specific actions for Google search.
 %%% @end
 
--module(vodkatv_oldadminui_actions).
+-module(google_search_actions).
 -behaviour(webui_actions).
 
 -export([setup/0, terminate/0]).
@@ -14,7 +14,7 @@
 -include("webui.hrl").
 
 %% @doc
-%%      Specific actions for the old VoDKATV AdminUI: initialisation function.
+%%      Specific actions for Google search: initialisation function.
 %%      It always needs to fall back to the behaviour initialisation as well.
 %% @end
 -spec setup() -> ok.
@@ -22,7 +22,7 @@ setup() ->
     ok = webui_actions:setup(?MODULE).
     
 %% @doc
-%%      Specific actions for the old VoDKATV AdminUI: termination function.
+%%      Specific actions for Google search: termination function.
 %%      It always needs to fall back to the behaviour termination as well.
 %% @end
 -spec terminate() -> ok.

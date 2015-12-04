@@ -1,4 +1,4 @@
-SUT=vodkatv_oldadminui
+SUT=google_search
 BROWSERDRV=deps/chromedriver
 WEBDRV=deps/webdrv
 FLAGS=-Ddebug
@@ -15,10 +15,6 @@ dialyzer:
                  -Werror_handling    \
                  -Wrace_conditions   \
                  -Wunderspecs ebin/*beam
-
-run: ebin/test.beam
-	./$(BROWSERDRV) &
-	erl -pa ebin/ -pa $(WEBDRV)/ebin/
 
 $(SUT): compile
 	./$(BROWSERDRV) &
