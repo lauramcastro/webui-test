@@ -45,8 +45,8 @@ first should point to the `chromium-webdriver` executable file in your system; t
 `Makefile` assumes there is a symbolic link to it in the `deps` folder. The second
 one should to point to the folder in which you have cloned -and
 compiled- the `webdrv` repository; again the `Makefile` assumes there is
-a symbolic link to it in the `deps` folder).
+a symbolic link to it in the `deps` folder.
 
 Finally, run `make google-search`. You should see a new window of the
-browser appear, the load of the Google search main page, and random
-interaction from there on.
+browser appear, the Google search main page loading, and random
+interaction from there on. Of course, you need to have internet access.
