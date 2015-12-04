@@ -31,5 +31,22 @@ Apart from a QuickCheck licence, there are two main dependencies:
   
 ## How do I use it?
   
-We will provide some examples of use in upcoming commits. Please bear
-with us.
+There is a very simple example in the `test` folder. In order to get it
+running, make sure you have the following installed (or equivalent):
+
+* make
+* chromium-chromedriver
+* chromium-browser
+* Erlang VM
+* webdrv
+
+Then update the Makefile to update the variables `BROWSERDRV` (to
+point to the `chromium-webdriver` executable file in your system; the
+Makefile assumes there is a symbolic link to it in the `deps` folder)
+and WEBDRV (to point to the folder in which you have cloned -and
+compiled- the `webdrv` repository; again the Makefile assumes there is
+a symbolic link to it in the `deps` folder).
+
+Finally, run `make google-search`. You should see a new window of the
+browser appear, the load of the Google search main page, and random
+interaction from there on.
