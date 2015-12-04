@@ -38,13 +38,13 @@ running, make sure you have the following installed (or equivalent):
 * chromium-chromedriver
 * chromium-browser
 * Erlang VM
-* webdrv
+* [webdrv](https://github.com/lauramcastro/webdrv)
 
-Then update the Makefile to update the variables `BROWSERDRV` (to
-point to the `chromium-webdriver` executable file in your system; the
-Makefile assumes there is a symbolic link to it in the `deps` folder)
-and WEBDRV (to point to the folder in which you have cloned -and
-compiled- the `webdrv` repository; again the Makefile assumes there is
+Then edit the `Makefile` to update the variables `BROWSERDRV` and `WEBDRV`. The
+first should point to the `chromium-webdriver` executable file in your system; the
+`Makefile` assumes there is a symbolic link to it in the `deps` folder. The second
+one should to point to the folder in which you have cloned -and
+compiled- the `webdrv` repository; again the `Makefile` assumes there is
 a symbolic link to it in the `deps` folder).
 
 Finally, run `make google-search`. You should see a new window of the
