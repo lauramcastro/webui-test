@@ -8,7 +8,7 @@ graphical user interfaces (GUIs).
 ### What does that mean?
 
 If you have an application or system for which the user interface is
-your browser, then webui-test is for you. This tool is focused
+your browser, then **WebUI-test** is for you. This tool is focused
 primarly in enabling a sort of QuickCheck-based monkey testing. It is
 QuickCheck-based because rather than writing unit tests, we provide a
 generic interaction model (a QuickCheck model) that you can fine-tune
@@ -19,22 +19,15 @@ going forward/backwards, reloading, etc.).  The interaction actions
 can also be fine-tuned if you use a particular web framework to build
 your user interface.
 
-### What do I need to use it?
-
-Apart from a [QuickCheck licence](http://quviq.com), there is only one
-  major dependency: `chromedriver`, the webdriver implementation for
-  the chromium browser (or equivalent if you intend to use a different
-  browser).
-  
 ### How do I use it?
-  
+
 There is a very simple example in the `examples` folder. In order to
 get it running, make sure you have the following installed (or
 equivalent):
 
-* chromium-chromedriver
-* chromium-browser
-* Erlang/OTP R18
+* chromium-browser + [chromium-chromedriver](https://sites.google.com/a/chromium.org/chromedriver/) (or equivalent if you intend to use a different browser)
+* [Erlang/OTP R18](http://www.erlang.org)
+* a [QuickCheck licence](http://quviq.com)
 
 Download/clone WebUI-test, and to compile it, just run
 
@@ -42,9 +35,13 @@ Download/clone WebUI-test, and to compile it, just run
 $ ./rebar3 compile
 ```
 
-Then, make sure to start the `chromedriver` before you run the
-example. The example is then run by opening a shell, moving into the
-`examples` folder, compiling the two modules and running the tests:
+Now, make sure to start the `chromedriver` before you run the
+example (this is usually done just by executing the `chromedriver`
+binary in the background; you **do not** need to lauch your browser,
+just the driver). The example is then executed by opening an Erlang
+shell, moving into the `examples` folder, compiling the two modules
+that constitute the example and calling the `run/0` function in
+the `google_search` one:
 
 ```
 $ ./rebar3 shell
@@ -64,8 +61,8 @@ You should see a new window of the browser appear, the Google search
 main page loading, and random interaction from there on. Of course,
 you need to have internet access.
 
-The current configuration will only generate and run 1 test sequence,
-but this can easily be adjusted by calling
+You can have more than one go (i.e. run more than 1 test sequence)
+easily by calling `run/1` instead:
 
 ```
 > google_search:run(10).
