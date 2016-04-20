@@ -8,11 +8,12 @@
 -module(webui_model).
 
 -callback run() -> boolean().
+-callback run(pos_integer()) -> boolean().
 -callback setup() -> ok.
 -callback teardown() -> ok.
 
 % exported for behaviour implementation
--export([run/2, setup/2, teardown/1]).
+-export([run/3, setup/2, teardown/1]).
 % exported for QC
 -export([do_nothing/0, run_action/1]).
 -export([api_spec/0, initial_state/0, command/1]).
@@ -31,9 +32,10 @@
 %%      sequences of interactions with the web-based GUI.
 %% @end
 -spec run(Mod :: atom(),
-	  Url :: string()) -> boolean().
-run(Mod, Url) ->
-    eqc:quickcheck(eqc:numtests(1,prop_webui(Mod, Url))).
+	  Url :: string(),
+	  Num :: pos_integer()) -> boolean().
+run(Mod, Url, N) ->
+    eqc:quickcheck(eqc:numtests(N,prop_webui(Mod, Url))).
 
 % Generic QC property (body).
 prop_webui(Mod, Url) ->

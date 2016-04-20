@@ -1,0 +1,15 @@
+{application, webui_test,
+ [{description, "An OTP library for web-based monkey testing using QuickCheck"},
+  {vsn, "0.1.0"},
+  {registered, []},
+  {applications,
+   [kernel,
+    stdlib
+   ]},
+  {env,[]},
+  {modules, []},
+
+  {maintainers, []},
+  {licenses, []},
+  {links, []}
+ ]}.
