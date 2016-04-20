@@ -29,7 +29,7 @@ equivalent):
 * [Erlang/OTP R18](http://www.erlang.org)
 * a [QuickCheck licence](http://quviq.com)
 
-Download/clone WebUI-test, and to compile it, just run
+Download or clone this repository, and build it:
 
 ```
 $ ./rebar3 compile
@@ -40,8 +40,8 @@ example (this is usually done just by executing the `chromedriver`
 binary in the background; you **do not** need to lauch your browser,
 just the driver). The example is then executed by opening an Erlang
 shell, moving into the `examples` folder, compiling the two modules
-that constitute the example and calling the `run/0` function in
-the `google_search` one:
+that constitute the example, and calling the `run/0` function in
+module `google_search`:
 
 ```
 $ ./rebar3 shell
