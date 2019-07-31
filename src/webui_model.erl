@@ -39,8 +39,10 @@ run(Mod, Url, N) ->
 
 % Generic QC property (body).
 prop_webui(Mod, Url) ->
-    ?SETUP(fun() -> setup(Mod, Url),
-		    fun() -> teardown(Mod) end
+    ?SETUP(fun() ->
+                   eqc_mocking:start_mocking(Mod:api_spec()),
+                   setup(Mod, Url),
+                   fun() -> teardown(Mod) end
 	   end,
 	   ?FORALL(Cmds, dynamic_commands(?MODULE),
 		   ?CHECK_COMMANDS(HSR={_History, _FinalState, Result}, ?MODULE, Cmds,
